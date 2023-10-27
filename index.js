@@ -6,6 +6,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.use(
+  cors({
+    origin: [
+      '*',
+      'https://teller-app.vercel.app'
+    ],
+    credentials: true,
+  })
+);
 const MONGO_URL =
   "mongodb+srv://ondg:ondg@cluster0.8rlvalv.mongodb.net/bankteller?retryWrites=true&w=majority";
 
