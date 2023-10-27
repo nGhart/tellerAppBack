@@ -1,15 +1,15 @@
-const accoutOwenerModel = require("../models/accountOwners");
+const Account = require("../models/accountModel");
 const transactionModel = require("../models/transactionModel");
 
 const getOwners = async (req, res) => {
-  let owners = await accoutOwenerModel.find({});
+  let owners = await Account.find({});
   res.json(owners);
 };
 
 const addOwner = async (req, res) => {
   try {
     let data = req.body;
-    let newOwner = await accoutOwenerModel.create(data);
+    let newOwner = await Account.create(data);
     if (!newOwner) {
       throw Error("Failed to create owner");
     }
@@ -21,13 +21,23 @@ const addOwner = async (req, res) => {
 
 // ADD ADD TO BALANCE
 const deposit = async (req, res) => {
-  const { accNumber, amount } = req.body;
+  const {
+    accNumber,
+    amount,
+    name,
+    contact,
+    branch,
+    accountType,
+    idType,
+    success,
+    idNumber,
+  } = req.body;
   try {
     // Convert the amount value to a number
     const amountToAdd = Number(amount);
 
     // Find the existing business document
-    const owner = await accoutOwenerModel.findOne({ accNumber: accNumber });
+    const owner = await Account.findOne({ accNumber: accNumber });
 
     if (!owner) {
       return res.json({ msg: "No business found" });
@@ -37,19 +47,27 @@ const deposit = async (req, res) => {
     const newBalance = owner.balance + amountToAdd;
 
     // Update the balance in the database
-    const updatedOwner = await accoutOwenerModel.updateOne(
+    const updatedOwner = await Account.updateOne(
       { accNumber: accNumber },
       { $set: { balance: newBalance } }
     );
     if (updatedOwner) {
-      let depostRecord = transactionModel.create({
+      let depositRecord = transactionModel.create({
         accountNumber: accNumber,
         transactionType: "deposit",
         amount: amountToAdd,
+        name: name,
+        contact: contact,
+        branch: branch,
+        accountType: accountType,
+        idType: idType,
+        success: success,
+        idNumber: idNumber,
+        status: "success",
         status: "success",
       });
       res.json({
-        msg: `Am amount of ${amountToAdd} has been created into your account`,
+        msg: `An amount of ${amountToAdd} has been credited to your account`,
       });
     }
   } catch (err) {
@@ -58,36 +76,57 @@ const deposit = async (req, res) => {
 };
 
 // withdraw
+
 const withdraw = async (req, res) => {
-  const { accNumber, amount } = req.body;
+  const {
+    accNumber,
+    amount,
+    name,
+    contact,
+    branch,
+    accountType,
+    idType,
+    success,
+    idNumber,
+  } = req.body;
   try {
     // Convert the amount value to a number
     const amountToAdd = Number(amount);
 
     // Find the existing business document
-    const owner = await accoutOwenerModel.findOne({ accNumber: accNumber });
+    const owner = await Account.findOne({ accNumber: accNumber });
 
     if (!owner) {
-      return res.json({ msg: "No business found" });
+      return res.json({ msg: "Account not found" });
     }
 
+    if (owner.balance <= amountToAdd) {
+      return res.status(500).json({ msg: "Insufficient funds" });
+    }
     // Calculate the new balance
     const newBalance = owner.balance - amountToAdd;
 
     // Update the balance in the database
-    const updatedOwner = await accoutOwenerModel.updateOne(
+    const updatedOwner = await Account.updateOne(
       { accNumber: accNumber },
       { $set: { balance: newBalance } }
     );
     if (updatedOwner) {
-      let depostRecord = transactionModel.create({
+      let depositRecord = transactionModel.create({
         accountNumber: accNumber,
         transactionType: "withdrawal",
         amount: amountToAdd,
+        name: name,
+        contact: contact,
+        branch: branch,
+        accountType: accountType,
+        idType: idType,
+        success: success,
+        idNumber: idNumber,
         status: "success",
       });
       return res.json({
-        msg: `Am amount of ${amountToAdd} has been debited into your account`,
+        msg: `An amount of ${amountToAdd} has been debited to your account`,
       });
     }
     res.json(updatedOwner);
@@ -102,3 +141,4 @@ module.exports = {
   withdraw,
   addOwner,
 };
+
